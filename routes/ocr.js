@@ -39,14 +39,17 @@ router.post('/', upload.single('image'), async (req, res) => {
     // ------------------------------
     // 1) Regex Extraction
     // ------------------------------
+    // Extract a date/time in format "12 Mar 2025 08:32:39"
     const dateRegex = /(\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/;
     const dateMatch = text.match(dateRegex);
     const dateTime = dateMatch ? dateMatch[1].trim() : '';
 
+    // Extract amount, e.g., "IDR 660,000.00"
     const amountRegex = /IDR\s+([\d,.,]+)/;
     const amountMatch = text.match(amountRegex);
     const amount = amountMatch ? amountMatch[1].trim() : '';
 
+    // Extract beneficiary name.
     let beneficiaryName = '';
     const nameLabelRegex = /Beneficiary\s+Name[\s\n]+(.+)/i;
     const nameLabelMatch = text.match(nameLabelRegex);
@@ -54,10 +57,12 @@ router.post('/', upload.single('image'), async (req, res) => {
       beneficiaryName = nameLabelMatch[1].split('\n')[0].trim();
     }
 
+    // Extract account number.
     const accountRegex = /(\d{3}\s*-\s*\d{3}\s*-\s*\d{4})/;
     const accountMatch = text.match(accountRegex);
     const beneficiaryAccount = accountMatch ? accountMatch[1].trim() : '';
 
+    // Extract transaction type.
     const txTypeLabelRegex = /Transaction\s+Type[\s\n]+(.+)/i;
     let transactionType = '';
     const txTypeLabelMatch = text.match(txTypeLabelRegex);
@@ -66,7 +71,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     }
 
     // New: Extract Fund Received date/time.
-    // Assumes the OCR text contains a line like "Fund Received: 12 Mar 2025 08:32:39"
+    // Assumes a line like "Fund Received: 12 Mar 2025 08:32:39"
     const fundReceivedRegex = /Fund Received[:\s]+(\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/;
     const fundReceivedMatch = text.match(fundReceivedRegex);
     const fundReceived = fundReceivedMatch ? fundReceivedMatch[1].trim() : '';
@@ -91,7 +96,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       beneficiaryAccount,
       transactionType,
       gender,
-      fundReceived, // new field for Fund Received Date/Time.
+      fundReceived, // New field
     });
   } catch (err) {
     console.error(err);
