@@ -16,6 +16,11 @@ const User = {
     return rows[0];
   },
 
+  async findById(userId) {
+    const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+    return rows[0];
+  },
+
   async updateOtp(email, otp) {
     await db.query(
       'UPDATE users SET temp_otp = ?, temp_otp_expiry = DATE_ADD(NOW(), INTERVAL 5 MINUTE) WHERE email = ?',
@@ -51,6 +56,13 @@ const User = {
     }
   },
 
+  async resetFailedLoginAttempts(email) {
+    await db.query(
+      'UPDATE users SET failed_login_attempts = 0 WHERE email = ?',
+      [email]
+    );
+  },
+
   async enable2FA(email) {
     await db.query(
       'UPDATE users SET two_fa_enabled = 1 WHERE email = ?',
@@ -68,6 +80,13 @@ const User = {
   async getPendingUsers() {
     const [rows] = await db.query('SELECT id, name, email, created_at FROM users WHERE approved = 0');
     return rows;
+  },
+
+  async lockAccount(email, until) {
+    await db.query(
+      'UPDATE users SET locked_until = ? WHERE email = ?',
+      [until, email]
+    );
   },
 };
 

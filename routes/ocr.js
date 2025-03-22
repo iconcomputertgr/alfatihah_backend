@@ -1,215 +1,161 @@
-// routes/ocr.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const multer = require('multer');
-const tesseract = require('node-tesseract-ocr');
+const multer = require("multer");
+const tesseract = require("node-tesseract-ocr");
+const fetch = require("node-fetch");
+const { exec } = require("child_process");
 
-// For memory-based file storage
-const upload = multer({ storage: multer.memoryStorage() });
+// Setup Multer (Memory Storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // Batas file 5MB
+});
 
-// If necessary, import fetch (e.g., using node-fetch)
-// const fetch = require('node-fetch');
+// **Pastikan Tesseract Bisa Ditemukan**
+function checkTesseractInstalled() {
+  return new Promise((resolve, reject) => {
+    exec("tesseract -v", (error, stdout, stderr) => {
+      if (error) {
+        console.error("Tesseract OCR tidak ditemukan di sistem.");
+        reject(new Error("Tesseract OCR tidak terinstal atau PATH belum dikonfigurasi."));
+      } else {
+        console.log("Tesseract OCR ditemukan:", stdout);
+        resolve(true);
+      }
+    });
+  });
+}
 
+// **Fungsi untuk mendapatkan gender berdasarkan nama**
 async function getGender(firstName) {
   try {
-    const response = await fetch(
-      `https://api.genderize.io?name=${encodeURIComponent(firstName)}`
-    );
+    const response = await fetch(`https://api.genderize.io?name=${encodeURIComponent(firstName)}`);
+    if (!response.ok) throw new Error(`Gender API gagal: ${response.statusText}`);
     const data = await response.json();
-    return data.gender || '';
+    return data.gender || "";
   } catch (err) {
-    console.error('Error fetching gender:', err);
-    return '';
+    console.error("Error fetching gender:", err);
+    return "";
   }
 }
 
-router.post('/', upload.single('image'), async (req, res) => {
+// **Fungsi untuk menjalankan OCR dengan timeout**
+function recognizeWithTimeout(imageBuffer, config, timeoutMs = 10000) {
+  return Promise.race([
+    tesseract.recognize(imageBuffer, config),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("OCR timeout")), timeoutMs))
+  ]);
+}
+
+// **Route untuk OCR**
+router.post("/", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No image file uploaded' });
+      return res.status(400).json({ error: "No image file uploaded" });
     }
 
-    // Tesseract config
+    // Cek apakah Tesseract tersedia sebelum menjalankan OCR
+    await checkTesseractInstalled();
+
+    // Konfigurasi Tesseract
     const config = {
-      lang: 'eng', // or other language packs as needed
+      lang: "eng",
       oem: 1,
       psm: 3,
+      executablePath: "C:\\Program Files\\Tesseract-OCR\\tesseract.exe" // Pastikan path sesuai
     };
 
-    // Run OCR
-    const text = await tesseract.recognize(req.file.buffer, config);
+    const text = await recognizeWithTimeout(req.file.buffer, config);
 
-    // 1) Detect the bank
+    // 1) Deteksi bank
     const bank = detectBank(text);
 
-    // 2) Extract fields based on the bank
-    let extracted = {};
-    if (bank === 'BCA') {
-      extracted = extractBCA(text);
-    } else if (bank === 'BRI') {
-      extracted = extractBRI(text);
-    } else {
-      // If unknown, or not found
-      extracted = extractGeneric(text); 
-    }
+    // 2) Ekstrak data sesuai bank
+    let extracted = bank === "BCA" ? extractBCA(text) :
+                    bank === "BRI" ? extractBRI(text) :
+                    extractGeneric(text);
 
-    // 3) Gender prediction if we have a beneficiary name
-    let gender = '';
+    // 3) Prediksi gender jika ada nama penerima
+    let gender = "";
     if (extracted.beneficiaryName) {
-      const firstName = extracted.beneficiaryName.split(' ')[0];
+      const firstName = extracted.beneficiaryName.split(" ")[0];
       gender = await getGender(firstName);
     }
 
-    // 4) Return structured data
-    // Merge the extracted fields with the raw OCR text and gender
-    res.json({
-      ocrText: text,
-      gender,
-      ...extracted,
-    });
+    // 4) Kirim hasil
+    res.json({ ocrText: text, gender, ...extracted });
+
   } catch (err) {
-    console.error(err);
+    console.error("Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Helper function to detect bank from the OCR text
+// **Fungsi untuk mendeteksi bank dari teks OCR**
 function detectBank(text) {
   const lowerText = text.toLowerCase();
-  if (lowerText.includes('bca')) return 'BCA';
-  if (lowerText.includes('bri') || lowerText.includes('brimo')) return 'BRI';
-  if (lowerText.includes('mandiri')) return 'MANDIRI';
-  if (lowerText.includes('cimb')) return 'CIMB';
-  // Add more checks as needed
-  return 'UNKNOWN';
+  if (lowerText.includes("bca")) return "BCA";
+  if (lowerText.includes("bri") || lowerText.includes("brimo")) return "BRI";
+  if (lowerText.includes("mandiri")) return "MANDIRI";
+  if (lowerText.includes("cimb")) return "CIMB";
+  return "UNKNOWN";
 }
 
-// Regex extraction for BCA
+// **Ekstraksi data untuk BCA**
 function extractBCA(text) {
-  // This is the same logic you had for BCA.
-  const dateRegex = /(\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/;
-  const dateMatch = text.match(dateRegex);
-  const dateTime = dateMatch ? dateMatch[1].trim() : '';
-
-  const amountRegex = /IDR\s+([\d,.,]+)/;
-  const amountMatch = text.match(amountRegex);
-  const amount = amountMatch ? amountMatch[1].trim() : '';
-
-  // Beneficiary name
-  let beneficiaryName = '';
-  const nameLabelRegex = /Beneficiary\s+Name[\s\n]+(.+)/i;
-  const nameLabelMatch = text.match(nameLabelRegex);
-  if (nameLabelMatch) {
-    beneficiaryName = nameLabelMatch[1].split('\n')[0].trim();
-  }
-
-  // Account number
-  const accountRegex = /(\d{3}\s*-\s*\d{3}\s*-\s*\d{4})/;
-  const accountMatch = text.match(accountRegex);
-  const beneficiaryAccount = accountMatch ? accountMatch[1].trim() : '';
-
-  // Transaction type
-  const txTypeLabelRegex = /Transaction\s+Type[\s\n]+(.+)/i;
-  let transactionType = '';
-  const txTypeLabelMatch = text.match(txTypeLabelRegex);
-  if (txTypeLabelMatch) {
-    transactionType = txTypeLabelMatch[1].split('\n')[0].trim();
-  }
-
-  // Fund Received date/time
-  const fundReceivedRegex = /Fund Received[:\s]+(\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/;
-  const fundReceivedMatch = text.match(fundReceivedRegex);
-  const fundReceived = fundReceivedMatch ? fundReceivedMatch[1].trim() : '';
+  const dateMatch = text.match(/(\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/);
+  const amountMatch = text.match(/IDR\s+([\d,\.]+)/);
+  const nameMatch = text.match(/Beneficiary\s+Name[\s\n]+(.+)/i);
+  const accountMatch = text.match(/(\d{3}\s*-\s*\d{3}\s*-\s*\d{4})/);
+  const txMatch = text.match(/Transaction\s+Type[\s\n]+(.+)/i);
 
   return {
-    dateTime,
-    amount,
-    beneficiaryName,
-    beneficiaryAccount,
-    transactionType,
-    fundReceived,
-    bank: 'BCA',
+    dateTime: dateMatch ? dateMatch[1].trim() : "",
+    amount: amountMatch ? amountMatch[1].trim() : "",
+    beneficiaryName: nameMatch ? nameMatch[1].split("\n")[0].trim() : "",
+    beneficiaryAccount: accountMatch ? accountMatch[1].trim() : "",
+    transactionType: txMatch ? txMatch[1].split("\n")[0].trim() : "",
+    bank: "BCA",
   };
 }
 
-// Regex extraction for BRI
+// **Ekstraksi data untuk BRI**
 function extractBRI(text) {
-  // Example for BRI (BRImo) screenshot:
-  // "Transaksi Berhasil"
-  // "03 April 2024, 17:23:37 WIB"
-  // "Rp2.450.000"
-  // "Sumber Dana: DR LO KURNIAWAN"
-  // "Tujuan: NURUL KHASANAH"
-  // "Transfer Bank BRI"
-  // etc.
-
-  // Date/time
-  // e.g. "03 April 2024, 17:23:37 WIB"
-  const dateRegex = /(\d{1,2}\s+[A-Za-z]{3,}\s+\d{4},?\s+\d{2}:\d{2}:\d{2}\s+WIB)/i;
-  const dateMatch = text.match(dateRegex);
-  const dateTime = dateMatch ? dateMatch[1].trim() : '';
-
-  // Amount e.g. "Rp2.450.000"
-  const amountRegex = /Rp[\s]*([\d.,]+)/i;
-  const amountMatch = text.match(amountRegex);
-  const amount = amountMatch ? amountMatch[1].trim() : '';
-
-  // Sumber Dana or "Source" (beneficiaryName or account name)
-  // e.g. "Sumber Dana:\s+DR LO KURNIAWAN"
-  let beneficiaryName = '';
-  const nameRegex = /Tujuan:\s*(.+)/i; 
-  // Or "Nama Tujuan:\s*(.+)" etc. depends on real text
-  const nameMatch = text.match(nameRegex);
-  if (nameMatch) {
-    beneficiaryName = nameMatch[1].split('\n')[0].trim();
-  }
-
-  // Account number (sometimes BRI might show e.g. "xxxx-xxxx-xxxx")
-  // Adjust pattern as needed
-  const accountRegex = /(\d{3,4}\s*-\s*\d{3,4}\s*-\s*\d{3,4})/;
-  const accountMatch = text.match(accountRegex);
-  const beneficiaryAccount = accountMatch ? accountMatch[1].trim() : '';
-
-  // Transaction type (e.g. "Transfer Bank BRI")
-  let transactionType = '';
-  const txRegex = /Jenis\s+Transaksi:\s*(.+)/i;
-  const txMatch = text.match(txRegex);
-  if (txMatch) {
-    transactionType = txMatch[1].split('\n')[0].trim();
-  }
-
-  // For BRI, we might not have a separate "Fund Received" line, so set empty or
-  // if you see something like "Fund Received:" in actual text, parse it similarly.
+  const dateMatch = text.match(/(\d{1,2}\s+[A-Za-z]{3,}\s+\d{4},?\s+\d{2}:\d{2}:\d{2}\s+WIB)/i);
+  const amountMatch = text.match(/Rp[\s]*([\d.,]+)/i);
+  const nameMatch = text.match(/Tujuan:\s*(.+)/i);
+  const accountMatch = text.match(/(\d{3,4}\s*-\s*\d{3,4}\s*-\s*\d{3,4})/);
+  const txMatch = text.match(/Jenis\s+Transaksi:\s*(.+)/i);
 
   return {
-    dateTime,
-    amount,
-    beneficiaryName,
-    beneficiaryAccount,
-    transactionType,
-    fundReceived: '', // or parse if available
-    bank: 'BRI',
+    dateTime: dateMatch ? dateMatch[1].trim() : "",
+    amount: amountMatch ? amountMatch[1].trim() : "",
+    beneficiaryName: nameMatch ? nameMatch[1].split("\n")[0].trim() : "",
+    beneficiaryAccount: accountMatch ? accountMatch[1].trim() : "",
+    transactionType: txMatch ? txMatch[1].split("\n")[0].trim() : "",
+    bank: "BRI",
   };
 }
 
-// Generic fallback extraction (in case bank is unknown)
+// **Ekstraksi data untuk bank lain**
 function extractGeneric(text) {
-  // Minimal or fallback approach
-  // Attempt to find date, amount, name, etc. with more general regex
-  const dateRegex = /(\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/;
-  const dateMatch = text.match(dateRegex);
-  const dateTime = dateMatch ? dateMatch[1].trim() : '';
+  const dateMatch = text.match(/(\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/);
+  const amountMatch = text.match(/Rp[\s]*([\d.,]+)/i);
 
-  const amountRegex = /Rp[\s]*([\d.,]+)/i;
-  const amountMatch = text.match(amountRegex);
-  const amount = amountMatch ? amountMatch[1].trim() : '';
-
-  // etc. 
   return {
-    dateTime,
-    amount,
-    bank: 'UNKNOWN',
+    dateTime: dateMatch ? dateMatch[1].trim() : "",
+    amount: amountMatch ? amountMatch[1].trim() : "",
+    bank: "UNKNOWN",
   };
 }
+
+// **Menangani error global agar server tidak crash**
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
 
 module.exports = router;
