@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const User = require('../models/user');
@@ -54,28 +55,29 @@ router.post('/login', async (req, res) => {
     await User.resetFailedLoginAttempts(email);
 
     // If two-factor authentication is not enabled, proceed to login
-    if (!user.two_fa_enabled) {
-      let deviceToken = null;
-      if (rememberDevice) {
-        // Generate a secure device token and set a 1-week expiry
-        deviceToken = crypto.randomBytes(32).toString('hex');
-        const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 1 week
-        await User.createTrustedDevice(user.id, deviceToken, req.ip, req.headers['user-agent'], expiry);
-        res.cookie('device_token', deviceToken, { 
-          httpOnly: true, 
-          secure: process.env.NODE_ENV === 'production', 
-          maxAge: 7 * 24 * 60 * 60 * 1000 
-        });
-      }
-      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '2h' });
-      res.cookie('auth_token', token, { 
+  if (!user.two_fa_enabled) {
+    let deviceToken = null;
+    if (rememberDevice) {
+      // Generate a secure device token and set a 1-week expiry
+      deviceToken = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 1 week
+      await User.createTrustedDevice(user.id, deviceToken, req.ip, req.headers['user-agent'], expiry);
+      res.cookie('device_token', deviceToken, { 
         httpOnly: true, 
         secure: process.env.NODE_ENV === 'production', 
-        maxAge: 2 * 60 * 60 * 1000 
+        maxAge: 7 * 24 * 60 * 60 * 1000 
       });
-      await User.updateLoginSuccess(email, token);
-      return res.json({ message: 'Login successful', deviceToken });
     }
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '2h' });
+    res.cookie('auth_token', token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      maxAge: 2 * 60 * 60 * 1000 
+    });
+    await User.updateLoginSuccess(email, token);
+    return res.json({ message: 'Login successful', token, deviceToken });
+  }
+
 
     // If 2FA is enabled → generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
