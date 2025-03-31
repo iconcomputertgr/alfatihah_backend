@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const crypto= require('crypto');
 const authRoutes = require('./routes/auth');
 const ocrRoutes = require('./routes/ocr'); // <-- import the ocr route
 

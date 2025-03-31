@@ -31,9 +31,9 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login (check approval status & 2FA)
+// POST /login endpoint
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, rememberDevice } = req.body;
   try {
     const user = await User.findByEmail(email);
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
@@ -53,59 +53,62 @@ router.post('/login', async (req, res) => {
 
     await User.resetFailedLoginAttempts(email);
 
+    // If two-factor authentication is not enabled, proceed to login
     if (!user.two_fa_enabled) {
+      let deviceToken = null;
+      if (rememberDevice) {
+        // Generate a secure device token and set a 1-week expiry
+        deviceToken = crypto.randomBytes(32).toString('hex');
+        const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 1 week
+        await User.createTrustedDevice(user.id, deviceToken, req.ip, req.headers['user-agent'], expiry);
+        res.cookie('device_token', deviceToken, { 
+          httpOnly: true, 
+          secure: process.env.NODE_ENV === 'production', 
+          maxAge: 7 * 24 * 60 * 60 * 1000 
+        });
+      }
       const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '2h' });
-      res.cookie('auth_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 2 * 60 * 60 * 1000
+      res.cookie('auth_token', token, { 
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === 'production', 
+        maxAge: 2 * 60 * 60 * 1000 
       });
       await User.updateLoginSuccess(email, token);
-      return res.json({ message: 'Login successful' });
+      return res.json({ message: 'Login successful', deviceToken });
     }
 
-    // 2FA Enabled → Generate OTP
+    // If 2FA is enabled → generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiryTime = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
     await User.updateOtp(email, otp, expiryTime);
 
-    // ✅ Kirim OTP pakai email styled & identitas pengirim
+    // Send OTP email (make sure your transporter is set up)
     await transporter.sendMail({
       from: `"Alfatihah Fundraising" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Kode OTP Anda - Alfatihah Fundraising',
-      text: `Kode OTP Anda adalah ${otp}. Berlaku selama 5 menit.`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; color: #333;">
-          <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <h2 style="color: #4CAF50;">Kode OTP Anda</h2>
-            <p>Hai <strong>${user.name}</strong>,</p>
-            <p>Berikut adalah kode OTP untuk login ke akun <strong>Alfatihah Fundraising</strong> Anda:</p>
-            <div style="font-size: 24px; font-weight: bold; background: #e8f5e9; padding: 16px; text-align: center; border-radius: 6px; margin: 20px 0;">
-              ${otp}
-            </div>
-            <p>Kode ini berlaku selama <strong>5 menit</strong>.</p>
-            <hr style="margin: 30px 0;">
-            <p style="font-size: 12px; color: #888;">Email ini dikirim otomatis oleh sistem Alfatihah Fundraising. Jika Anda tidak meminta kode ini, silakan abaikan.</p>
-          </div>
-        </div>
-      `
+      subject: 'Your OTP Code - Alfatihah Fundraising',
+      text: `Your OTP code is ${otp}. It is valid for 5 minutes.`,
+      html: `<div style="font-family: Arial; padding: 20px;">
+               <h2>Your OTP Code</h2>
+               <p>Hello ${user.name},</p>
+               <p>Your OTP code for Alfatihah Fundraising is:</p>
+               <h1>${otp}</h1>
+               <p>This code expires in <strong>5 minutes</strong>.</p>
+             </div>`
     });
 
     res.json({ message: 'OTP sent to your email', requires2FA: true });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-// Verify OTP (2FA)
+// POST /verify-2fa endpoint
 router.post('/verify-2fa', async (req, res) => {
-  const { email, otp } = req.body;
+  const { email, otp, rememberDevice } = req.body;
   try {
     const user = await User.findByEmail(email);
-
     if (!user || user.temp_otp !== otp || !user.temp_otp_expiry || user.temp_otp_expiry < new Date()) {
       await User.incrementFailedLoginAttempts(email);
       return res.status(401).json({ error: 'Invalid or expired OTP' });
@@ -114,24 +117,33 @@ router.post('/verify-2fa', async (req, res) => {
     await User.clearOtp(email);
     await User.resetFailedLoginAttempts(email);
 
+    let deviceToken = null;
+    if (rememberDevice) {
+      deviceToken = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 1 week
+      await User.createTrustedDevice(user.id, deviceToken, req.ip, req.headers['user-agent'], expiry);
+      res.cookie('device_token', deviceToken, { 
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === 'production', 
+        maxAge: 7 * 24 * 60 * 60 * 1000 
+      });
+    }
+
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '2h' });
-    res.cookie('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 2 * 60 * 60 * 1000
+    res.cookie('auth_token', token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      maxAge: 2 * 60 * 60 * 1000 
     });
     await User.updateLoginSuccess(email, token);
 
-    res.json({
-      message: '2FA verified',
-      token,
-    });
-
+    res.json({ message: '2FA verified', token, deviceToken });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: '2FA verification failed' });
   }
 });
+
 
 // Enable 2FA
 router.post('/enable-2fa', async (req, res) => {
