@@ -32,6 +32,25 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Test Email Route
+router.get('/test-email', async (req, res) => {
+  try {
+    const info = await transporter.sendMail({
+      from: `"Alfatihah Fundraising" <${process.env.EMAIL_USER}>`,
+      to: 'jedifuk@gmail.com', // or any valid recipient email address
+      subject: 'Test Email - Alfatihah Fundraising',
+      text: 'This is a test email from Nodemailer.',
+      html: '<p>This is a test email from <strong>Nodemailer</strong>.</p>',
+    });
+    console.log('Test email sent: %s', info.messageId);
+    res.json({ message: 'Test email sent successfully', info });
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ error: 'Failed to send test email', details: error });
+  }
+});
+
+
 // POST /login endpoint
 router.post('/login', async (req, res) => {
   const { email, password, rememberDevice } = req.body;
