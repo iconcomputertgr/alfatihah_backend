@@ -145,10 +145,12 @@ router.post('/login', async (req, res) => {
 
 // POST /verify-2fa endpoint
 router.post('/verify-2fa', async (req, res) => {
+  console.log('Received OTP verification request for email:', req.body.email);
   const { email, otp, rememberDevice } = req.body;
   try {
     const user = await User.findByEmail(email);
-    if (!user || user.temp_otp !== otp || !user.temp_otp_expiry || user.temp_otp_expiry < new Date()) {
+    // if (!user || user.temp_otp !== otp || !user.temp_otp_expiry || user.temp_otp_expiry < new Date()) {
+    if (!user || String(user.temp_otp) !== otp || !user.temp_otp_expiry || user.temp_otp_expiry < new Date()) {
       await User.incrementFailedLoginAttempts(email);
       return res.status(401).json({ error: 'Invalid or expired OTP' });
     }

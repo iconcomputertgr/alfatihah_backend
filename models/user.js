@@ -91,6 +91,7 @@ const User = {
 
   // NEW METHOD: Create a trusted device record
   async createTrustedDevice(userId, deviceToken, ipAddress, userAgent, expiry) {
+    console.log('Creating trusted device for user', userId, 'with token', deviceToken, 'expires at', expiry);
     await db.query(
       'INSERT INTO trusted_devices (user_id, device_token, ip_address, user_agent, expires_at) VALUES (?, ?, ?, ?, ?)',
       [userId, deviceToken, ipAddress, userAgent, expiry]
