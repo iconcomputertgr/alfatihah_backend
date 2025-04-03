@@ -4,8 +4,10 @@ const crypto= require('crypto');
 const authRoutes = require('./routes/auth');
 const ocrRoutes = require('./routes/ocr'); // <-- import the ocr route
 
-const app = express();
+const cookieParser = require('cookie-parser');
 
+const app = express();
+app.use(cookieParser());
 app.use(express.json());
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Adjust for production

@@ -96,6 +96,19 @@ const User = {
       [userId, deviceToken, ipAddress, userAgent, expiry]
     );
   },
+
+  // NEW METHOD: Check if a trusted device is valid for a user.
+  async isTrustedDevice(userId, deviceToken, ipAddress, userAgent) {
+    const [rows] = await db.query(
+      'SELECT * FROM trusted_devices WHERE user_id = ? AND device_token = ? AND expires_at > NOW()',
+      [userId, deviceToken]
+    );
+    if (rows.length > 0) {
+      // Optionally, you can verify that ipAddress and userAgent match here.
+      return true;
+    }
+    return false;
+  },
 };
 
 module.exports = User;
