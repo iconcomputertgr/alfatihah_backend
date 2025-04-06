@@ -236,4 +236,65 @@ router.get('/pending-users', async (req, res) => {
   }
 });
 
+// Verify Trusted Device Endpoint
+router.post('/verify-device', async (req, res) => {
+  const { jwtToken, deviceToken } = req.body;
+
+  if (!jwtToken || !deviceToken) {
+    return res.status(400).json({ authenticated: false, error: 'Missing jwtToken or deviceToken.' });
+  }
+
+  try {
+    const decoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ authenticated: false, error: 'User not found.' });
+    }
+
+    const isTrusted = await User.isTrustedDevice(
+      user.id,
+      deviceToken,
+      req.ip,
+      req.headers['user-agent']
+    );
+
+    if (isTrusted) {
+      // Generate a fresh JWT token
+      const newToken = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '2h' }
+      );
+
+      await User.updateLoginSuccess(user.email, newToken);
+
+      // Renew cookies (if used in your approach)
+      res.cookie('auth_token', newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 2 * 60 * 60 * 1000,
+      });
+
+      return res.json({
+        authenticated: true,
+        token: newToken,
+        message: 'Device verified and authenticated.',
+      });
+    } else {
+      return res.status(401).json({
+        authenticated: false,
+        error: 'Device not trusted or token invalid.',
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying device:', error);
+    return res.status(401).json({
+      authenticated: false,
+      error: 'Invalid or expired JWT token.',
+    });
+  }
+});
+
+
 module.exports = router;
