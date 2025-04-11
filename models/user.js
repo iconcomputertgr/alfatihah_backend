@@ -5,7 +5,7 @@ const User = {
   async create(email, password, name = null) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await db.query(
-      'INSERT INTO users (email, password, name, approved) VALUES (?, ?, ?, 0)',
+      'INSERT INTO users (email, password, name, role, is_active, approved) VALUES (?, ?, ?, "user", 0, 0)',
       [email, hashedPassword, name]
     );
     return result.insertId;
