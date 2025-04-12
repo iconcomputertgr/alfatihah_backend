@@ -2,12 +2,14 @@ require("dotenv").config();
 
 const express = require("express");
 const crypto = require("crypto");
+const cookieParser = require("cookie-parser");
+
 const authRoutes = require("./routes/auth");
 const ocrRoutes = require("./routes/ocr");
 const programRoutes = require("./routes/programs");
 const bankRoutes = require("./routes/banks");
 const donaturRoutes = require("./routes/donaturs");
-const cookieParser = require("cookie-parser");
+const userRoutes = require("./routes/user");
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.use("/api/programs", programRoutes);
 app.use("/api/banks", bankRoutes);
 
 app.use("/api/donaturs", donaturRoutes);
+
+app.use("/api/users", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
