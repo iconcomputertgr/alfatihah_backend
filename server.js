@@ -7,6 +7,7 @@ const ocrRoutes = require("./routes/ocr");
 const programRoutes = require("./routes/programs");
 const bankRoutes = require("./routes/banks");
 const donaturRoutes = require("./routes/donaturs");
+const donationRoutes = require('./routes/donations');
 const cookieParser = require("cookie-parser");
 
 const app = express();
@@ -38,6 +39,8 @@ app.use("/api/programs", programRoutes);
 app.use("/api/banks", bankRoutes);
 
 app.use("/api/donaturs", donaturRoutes);
+
+app.use('/api/donations', donationRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
