@@ -2,6 +2,8 @@ require("dotenv").config();
 
 const express = require("express");
 const crypto = require("crypto");
+const cookieParser = require("cookie-parser");
+
 const authRoutes = require("./routes/auth");
 const ocrRoutes = require("./routes/ocr");
 const programRoutes = require("./routes/programs");
