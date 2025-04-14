@@ -2,13 +2,22 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 
 const User = {
-  async create(email, password, name = null) {
+  async create(
+    name,
+    email,
+    password,
+    role = "user",
+    isActive = 0,
+    approved = 0
+  ) {
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const [result] = await db.query(
-      'INSERT INTO users (email, password, name, role, is_active, approved) VALUES (?, ?, ?, "user", 0, 0)',
-      [email, hashedPassword, name]
+      "INSERT INTO users (name, email, password, role, is_active, approved) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = ?",
+      [name, email, hashedPassword, role, isActive, approved, email]
     );
-    return result.insertId;
+
+    return result;
   },
 
   async findByEmail(email) {
@@ -121,6 +130,31 @@ const User = {
   async findAll() {
     const [rows] = await db.query("SELECT * FROM users");
     return rows;
+  },
+
+  async update(
+    id,
+    email,
+    password,
+    name,
+    role = "user",
+    isActive = 0,
+    approved = 0
+  ) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const [result] = await db.query(
+      "UPDATE users SET email = ?, password = ?, name = ?, role = ?, is_active = ?, approved = ? WHERE id = ?",
+      [email, hashedPassword, name, role, isActive, approved, id]
+    );
+
+    return result;
+  },
+
+  async delete(id) {
+    const [result] = await db.query("DELETE FROM users WHERE id = ?", [id]);
+
+    return result;
   },
 };
 
