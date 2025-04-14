@@ -10,7 +10,6 @@ const programRoutes = require("./routes/programs");
 const bankRoutes = require("./routes/banks");
 const donaturRoutes = require("./routes/donaturs");
 const donationRoutes = require('./routes/donations');
-const cookieParser = require("cookie-parser");
 
 const app = express();
 
