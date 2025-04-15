@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const User = require("../models/user");
 const router = express.Router();
+const db = require("../config/db");
 
 // Make sure to include cookie-parser in your app
 // const cookieParser = require('cookie-parser');
@@ -18,6 +19,19 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+
+async function getUserPermissions(userId) {
+  const [rows] = await db.query(
+    `
+    SELECT p.name AS permission
+    FROM user_permissions up
+    JOIN permissions p ON up.permission_id = p.id
+    WHERE up.user_id = ?
+  `,
+    [userId]
+  );
+  return rows.map((row) => row.permission);
+}
 
 // Register user (pending approval)
 router.post("/register", async (req, res) => {
@@ -117,7 +131,20 @@ router.post("/login", async (req, res) => {
         maxAge: 2 * 60 * 60 * 1000,
       });
       await User.updateLoginSuccess(email, token);
-      return res.json({ message: "Login successful", token, deviceToken });
+
+      const permissions = await getUserPermissions(user.id);
+
+      return res.json({
+        message: "Login successful",
+        token,
+        deviceToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          photo: user.profile_picture || null,
+          permissions,
+        },
+      });
     }
 
     // For 2FA-enabled accounts:
@@ -224,7 +251,19 @@ router.post("/verify-2fa", async (req, res) => {
     });
     await User.updateLoginSuccess(email, token);
 
-    res.json({ message: "2FA verified", token, deviceToken });
+    const permissions = await getUserPermissions(user.id);
+
+    res.json({
+      message: "2FA verified",
+      token,
+      deviceToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        photo: user.profile_picture || null,
+        permissions,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "2FA verification failed" });
