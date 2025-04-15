@@ -3,15 +3,37 @@ const router = express.Router();
 const Bank = require('../models/bank'); // Adjust the path as needed
 
 // GET all banks.
+// router.get('/', async (req, res) => {
+//   try {
+//     const banks = await Bank.getAll();
+//     res.json(banks);
+//   } catch (error) {
+//     console.error('Error fetching banks:', error);
+//     res.status(500).json({ error: 'Failed to fetch banks' });
+//   }
+// });
+
+// routes/banks.js
 router.get('/', async (req, res) => {
   try {
     const banks = await Bank.getAll();
-    res.json(banks);
+    // Format the banks to use camelCase keys
+    const formattedBanks = banks.map(bank => ({
+      id: bank.id,
+      name: bank.name,
+      accountNumber: bank.account_number,
+      branch: bank.account_holder,
+      // Optionally include timestamps
+      createdAt: bank.created_at,
+      updatedAt: bank.updated_at,
+    }));
+    res.json(formattedBanks);
   } catch (error) {
     console.error('Error fetching banks:', error);
     res.status(500).json({ error: 'Failed to fetch banks' });
   }
 });
+
 
 // GET a specific bank by ID.
 router.get('/:id', async (req, res) => {
