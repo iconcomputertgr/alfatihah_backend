@@ -132,20 +132,10 @@ const User = {
     return rows;
   },
 
-  async update(
-    id,
-    email,
-    password,
-    name,
-    role = "user",
-    isActive = 0,
-    approved = 0
-  ) {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+  async update(id, name, email, role = "user", isActive = 0, approved = 0) {
     const [result] = await db.query(
-      "UPDATE users SET email = ?, password = ?, name = ?, role = ?, is_active = ?, approved = ? WHERE id = ?",
-      [email, hashedPassword, name, role, isActive, approved, id]
+      "UPDATE users SET name = ?, email = ?, role = ?, is_active = ?, approved = ? WHERE id = ?",
+      [name, email, role, isActive, approved, id]
     );
 
     return result;

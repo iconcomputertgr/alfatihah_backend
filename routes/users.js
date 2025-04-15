@@ -18,6 +18,23 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id);
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/", async (req, res) => {
   const { name, email, password, role, is_active, approved } = req.body;
 
@@ -44,14 +61,13 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { name, email, password, role, is_active, approved } = req.body;
+  const { name, email, role, is_active, approved } = req.body;
 
   try {
     const user = await User.update(
       id,
       name,
       email,
-      password,
       role,
       is_active,
       approved
