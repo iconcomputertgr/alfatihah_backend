@@ -64,14 +64,13 @@ router.put("/:id", async (req, res) => {
   const { name, email, role, is_active, approved } = req.body;
 
   try {
-    const user = await User.update(
-      id,
+    const user = await User.update(id, {
       name,
       email,
       role,
       is_active,
-      approved
-    );
+      approved,
+    });
 
     res.json({
       success: true,

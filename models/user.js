@@ -128,11 +128,11 @@ const User = {
   },
 
   async findAll() {
-    const [rows] = await db.query("SELECT * FROM users");
+    const [rows] = await db.query("SELECT * FROM users ORDER BY name ASC");
     return rows;
   },
 
-  async update(id, name, email, role = "user", isActive = 0, approved = 0) {
+  async update(id, { name, email, role = "user", isActive = 0, approved = 0 }) {
     const [result] = await db.query(
       "UPDATE users SET name = ?, email = ?, role = ?, is_active = ?, approved = ? WHERE id = ?",
       [name, email, role, isActive, approved, id]
