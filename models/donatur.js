@@ -1,35 +1,52 @@
-const db = require('../config/db');
+const db = require("../config/db");
 
 const Donatur = {
   async getAll() {
-    const [rows] = await db.query('SELECT * FROM donaturs');
-    return rows;
+    const [result] = await db.query("SELECT * FROM donaturs JOIN users ON donaturs.user_id = users.id ORDER BY donaturs.created_at DESC");
+
+    return result.map((donatur) => ({
+      id: donatur.id,
+      user: {
+        id: donatur.user_id,
+        name: donatur.name,
+      },
+      name: donatur.name,
+      email: donatur.email,
+      phone: donatur.phone,
+      address: donatur.address,
+    }));
   },
 
   async getById(id) {
-    const [rows] = await db.query('SELECT * FROM donaturs WHERE id = ?', [id]);
-    return rows[0];
+    const [result] = await db.query("SELECT * FROM donaturs WHERE id = ?", [
+      id,
+    ]);
+
+    return result[0];
   },
 
   async create({ user_id, name, email, phone, address }) {
     const [result] = await db.query(
-      'INSERT INTO donaturs (user_id, name, email, phone, address) VALUES (?, ?, ?, ?, ?)',
+      "INSERT INTO donaturs (user_id, name, email, phone, address) VALUES (?, ?, ?, ?, ?)",
       [user_id, name, email, phone, address]
     );
-    return { id: result.insertId, user_id, name, email, phone, address };
+
+    return result;
   },
 
   async update(id, { user_id, name, email, phone, address }) {
-    await db.query(
-      'UPDATE donaturs SET user_id = ?, name = ?, email = ?, phone = ?, address = ? WHERE id = ?',
+    const [result] = await db.query(
+      "UPDATE donaturs SET user_id = ?, name = ?, email = ?, phone = ?, address = ? WHERE id = ?",
       [user_id, name, email, phone, address, id]
     );
-    return await this.getById(id);
+
+    return result;
   },
 
   async delete(id) {
-    const [result] = await db.query('DELETE FROM donaturs WHERE id = ?', [id]);
-    return result.affectedRows > 0;
+    const [result] = await db.query("DELETE FROM donaturs WHERE id = ?", [id]);
+
+    return result;
   },
 };
 

@@ -1,53 +1,102 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Donatur = require('../models/donatur');
+const Donatur = require("../models/donatur");
 
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const donaturs = await Donatur.getAll();
-    res.json(donaturs);
+
+    res.json({
+      success: true,
+      data: donaturs,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch donaturs' });
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to fetch donaturs" });
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const donatur = await Donatur.getById(req.params.id);
-    if (!donatur) return res.status(404).json({ error: 'Donatur not found' });
-    res.json(donatur);
+    const donatur = await Donatur.getById(id);
+
+    if (!donatur) return res.status(404).json({ error: "Donatur not found" });
+
+    res.json({
+      success: true,
+      data: donatur,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch donatur' });
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to fetch donatur" });
   }
 });
 
-router.post('/', async (req, res) => {
-  const { user_id, name, email, phone, address } = req.body;
+router.post("/", async (req, res) => {
+  const { user, name, email, phone, address } = req.body;
+
   try {
-    const newDonatur = await Donatur.create({ user_id, name, email, phone, address });
-    res.status(201).json(newDonatur);
+    const donatur = await Donatur.create({
+      user_id: user.id,
+      name,
+      email,
+      phone,
+      address,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: donatur,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create donatur' });
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to create donatur" });
   }
 });
 
-router.put('/:id', async (req, res) => {
-  const { user_id, name, email, phone, address } = req.body;
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { user, name, email, phone, address } = req.body;
+
   try {
-    const updatedDonatur = await Donatur.update(req.params.id, { user_id, name, email, phone, address });
-    res.json(updatedDonatur);
+    const donatur = await Donatur.update(id, {
+      user_id: user.id,
+      name,
+      email,
+      phone,
+      address,
+    });
+
+    res.json({
+      success: true,
+      data: donatur,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update donatur' });
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to update donatur" });
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const deleted = await Donatur.delete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Donatur not found' });
-    res.json({ message: 'Donatur deleted successfully' });
+    const donatur = await Donatur.delete(id);
+
+    res.json({
+      success: true,
+      message: "Donatur deleted successfully",
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete donatur' });
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to delete donatur" });
   }
 });
 
