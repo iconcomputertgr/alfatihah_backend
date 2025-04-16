@@ -100,4 +100,38 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+router.patch("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, email, password, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(id);
+
+    if (password && newPassword) {
+      const match = await bcrypt.compare(password, user.password);
+
+      if (!match) {
+        return res.status(400).json({ error: "Old password is incorrect" });
+      }
+
+      await User.updatePassword(id, newPassword);
+
+      return res.json({ success: true, message: "Password updated" });
+    }
+
+    await User.update(id, {
+      name: name || user.name,
+      email: email || user.email,
+      role: user.role,
+      isActive: user.is_active,
+      approved: user.approved,
+    });
+
+    res.json({ success: true, message: "Profile updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;

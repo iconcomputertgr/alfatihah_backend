@@ -146,6 +146,17 @@ const User = {
 
     return result;
   },
+
+  async updatePassword(id, password) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const [result] = await db.query(
+      "UPDATE users SET password = ? WHERE id = ?",
+      [hashedPassword, id]
+    );
+
+    return result;
+  },
 };
 
 module.exports = User;
