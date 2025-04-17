@@ -58,7 +58,7 @@ app.use("/api/donations", donationRoutes);
 
 app.use("/api/users", userRoutes);
 
-app.use("/permissions", permissionsRoutes);
+app.use("/api/permissions", permissionsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const User = require("../models/user");
+const Permission = require("../models/permission");
 const createUploadMiddleware = require("../middlewares/upload");
 
 const bcrypt = require("bcrypt");
@@ -50,7 +51,15 @@ router.post(
   "/",
   uploadUserPhoto.single("profile_picture"),
   async (req, res) => {
-    const { name, email, password, role, is_active, approved } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      is_active,
+      approved,
+      permissions = [],
+    } = req.body;
     const file = req.file;
 
     try {
@@ -68,6 +77,10 @@ router.post(
         filePath
       );
 
+      const userId = user.insertId;
+
+      await Permission.assignToUser(userId, permissions);
+
       res.status(201).json({
         success: true,
         data: user,
@@ -84,7 +97,14 @@ router.put(
   uploadUserPhoto.single("profile_picture"),
   async (req, res) => {
     const { id } = req.params;
-    const { name, email, role, is_active, approved } = req.body;
+    const {
+      name,
+      email,
+      role,
+      is_active,
+      approved,
+      permissions = [],
+    } = req.body;
     const file = req.file;
 
     try {
@@ -103,6 +123,9 @@ router.put(
       if (filePath) updatePayload.profile_picture = filePath;
 
       const user = await User.update(id, updatePayload);
+
+      await Permission.removeFromUser(id);
+      await Permission.assignToUser(id, permissions);
 
       res.json({
         success: true,
@@ -176,5 +199,20 @@ router.patch(
     }
   }
 );
+
+router.get("/:id/permissions", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const permissions = await User.getUserPermissions(id);
+
+    const permissionIds = permissions.map((row) => row.id);
+
+    res.json({ success: true, data: permissionIds });
+  } catch (error) {
+    console.error("Error fetching user permissions:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 module.exports = router;

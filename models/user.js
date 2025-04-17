@@ -7,7 +7,7 @@ const User = {
     email,
     password,
     role = "user",
-    isActive = 0,
+    is_active = 0,
     approved = 0,
     profile_picture
   ) {
@@ -20,7 +20,7 @@ const User = {
         email,
         hashedPassword,
         role,
-        isActive,
+        is_active,
         approved,
         profile_picture,
         email,
@@ -144,7 +144,7 @@ const User = {
 
   async update(
     id,
-    { name, email, role = "user", isActive = 0, approved = 0, profile_picture }
+    { name, email, role = "user", is_active = 0, approved = 0, profile_picture }
   ) {
     const fields = [
       "name = ?",
@@ -153,7 +153,7 @@ const User = {
       "is_active = ?",
       "approved = ?",
     ];
-    const values = [name, email, role, isActive, approved];
+    const values = [name, email, role, is_active, approved];
 
     if (profile_picture) {
       fields.push("profile_picture = ?");
@@ -185,6 +185,14 @@ const User = {
     );
 
     return result;
+  },
+
+  async getUserPermissions(userId) {
+    const [rows] = await db.query(
+      "SELECT permissions.* FROM user_permissions INNER JOIN permissions ON user_permissions.permission_id = permissions.id WHERE user_permissions.user_id = ?",
+      [userId]
+    );
+    return rows;
   },
 };
 
