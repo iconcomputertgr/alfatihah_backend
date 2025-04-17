@@ -65,7 +65,7 @@ router.post(
     try {
       const filePath = file
         ? `assets/images/users/${file.filename}`
-        : "assets/images/users/default_profile.png";
+        : "assets/images/default_profile.png";
 
       const user = await User.create(
         name,
@@ -110,7 +110,7 @@ router.put(
     try {
       const filePath = file
         ? `assets/images/users/${file.filename}`
-        : "assets/images/users/default_profile.png";
+        : null;
 
       const updatePayload = {
         name,
