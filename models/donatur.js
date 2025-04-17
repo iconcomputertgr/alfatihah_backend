@@ -2,13 +2,21 @@ const db = require("../config/db");
 
 const Donatur = {
   async getAll() {
-    const [result] = await db.query("SELECT * FROM donaturs JOIN users ON donaturs.user_id = users.id ORDER BY donaturs.created_at DESC");
+    const [result] = await db.query(`
+      SELECT 
+        donaturs.*, 
+        users.id as user_id, 
+        users.name as user_name
+      FROM donaturs 
+      JOIN users ON donaturs.user_id = users.id 
+      ORDER BY donaturs.created_at DESC
+    `);
 
     return result.map((donatur) => ({
       id: donatur.id,
       user: {
         id: donatur.user_id,
-        name: donatur.name,
+        name: donatur.user_name,
       },
       name: donatur.name,
       email: donatur.email,
