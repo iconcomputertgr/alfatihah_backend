@@ -8,13 +8,23 @@ const User = {
     password,
     role = "user",
     isActive = 0,
-    approved = 0
+    approved = 0,
+    profile_picture
   ) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const [result] = await db.query(
-      "INSERT INTO users (name, email, password, role, is_active, approved) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = ?",
-      [name, email, hashedPassword, role, isActive, approved, email]
+      "INSERT INTO users (name, email, password, role, is_active, approved, profile_picture) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = ?",
+      [
+        name,
+        email,
+        hashedPassword,
+        role,
+        isActive,
+        approved,
+        profile_picture,
+        email,
+      ]
     );
 
     return result;
@@ -132,10 +142,29 @@ const User = {
     return rows;
   },
 
-  async update(id, { name, email, role = "user", isActive = 0, approved = 0 }) {
+  async update(
+    id,
+    { name, email, role = "user", isActive = 0, approved = 0, profile_picture }
+  ) {
+    const fields = [
+      "name = ?",
+      "email = ?",
+      "role = ?",
+      "is_active = ?",
+      "approved = ?",
+    ];
+    const values = [name, email, role, isActive, approved];
+
+    if (profile_picture) {
+      fields.push("profile_picture = ?");
+      values.push(profile_picture);
+    }
+
+    values.push(id);
+
     const [result] = await db.query(
-      "UPDATE users SET name = ?, email = ?, role = ?, is_active = ?, approved = ? WHERE id = ?",
-      [name, email, role, isActive, approved, id]
+      `UPDATE users SET ${fields.join(", ")} WHERE id = ?`,
+      values
     );
 
     return result;
