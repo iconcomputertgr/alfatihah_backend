@@ -12,6 +12,7 @@ const donaturRoutes = require("./routes/donaturs");
 const donationRoutes = require("./routes/donations");
 const userRoutes = require("./routes/users");
 const permissionsRoutes = require("./routes/permissions");
+const transactionsRoutes = require("./routes/transactions");
 
 const app = express();
 
@@ -37,7 +38,7 @@ app.use(
   })
 );
 
-app.use('/assets/images', express.static('assets/images'));
+app.use("/assets/images", express.static("assets/images"));
 
 app.use((req, res, next) => {
   console.log("Request: ", req.method, req.url);
@@ -59,6 +60,8 @@ app.use("/api/donations", donationRoutes);
 app.use("/api/users", userRoutes);
 
 app.use("/api/permissions", permissionsRoutes);
+
+app.use("/api/transactions", transactionsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>

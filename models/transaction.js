@@ -41,6 +41,7 @@ const Transaction = {
       amount: transaction.amount,
       notes: transaction.notes,
       transaction_date: transaction.transaction_date,
+      status: transaction.status,
     }));
   },
 };
