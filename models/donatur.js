@@ -26,11 +26,22 @@ const Donatur = {
   },
 
   async getById(id) {
-    const [result] = await db.query("SELECT * FROM donaturs WHERE id = ?", [
-      id,
-    ]);
+    const [result] = await db.query(
+      "SELECT donaturs.*, users.id as user_id, users.name as user_name FROM donaturs JOIN users ON donaturs.user_id = users.id WHERE donaturs.id = ?",
+      [id]
+    );
 
-    return result[0];
+    return {
+      id: result[0].id,
+      user: {
+        id: result[0].user_id,
+        name: result[0].user_name,
+      },
+      name: result[0].name,
+      email: result[0].email,
+      phone: result[0].phone,
+      address: result[0].address,
+    };
   },
 
   async create({ user_id, name, email, phone, address }) {
