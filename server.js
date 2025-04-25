@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const bodyParser = require('body-parser');
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
@@ -19,6 +20,10 @@ const app = express();
 app.use(cookieParser());
 
 app.use(express.json());
+
+// ← limit all incoming JSON bodies to 100 KB
+app.use(bodyParser.json({ limit: '100kb' }));
+app.use(bodyParser.urlencoded({ limit: '100kb', extended: true }));
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");

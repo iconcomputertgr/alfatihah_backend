@@ -2,6 +2,7 @@ const db = require('../config/db');
 
 const Bank = {
   async getAll() {
+    // SELECT * will include logo_base64 now
     const [rows] = await db.query('SELECT * FROM banks');
     return rows;
   },
@@ -11,20 +12,34 @@ const Bank = {
     return rows[0];
   },
 
-  async create({ name, account_number, account_holder }) {
+  async create({ name, account_number, account_holder, logo_base64 }) {
     const [result] = await db.query(
-      'INSERT INTO banks (name, account_number, account_holder) VALUES (?, ?, ?)',
-      [name, account_number, account_holder]
+      `INSERT INTO banks 
+         (name, account_number, account_holder, logo_base64) 
+       VALUES (?, ?, ?, ?)`,
+      [name, account_number, account_holder, logo_base64]
     );
-    return { id: result.insertId, name, account_number, account_holder };
+    // return the newly created record shape
+    return {
+      id: result.insertId,
+      name,
+      account_number,
+      account_holder,
+      logo_base64
+    };
   },
 
-  async update(id, { name, account_number, account_holder }) {
+  async update(id, { name, account_number, account_holder, logo_base64 }) {
     await db.query(
-      'UPDATE banks SET name = ?, account_number = ?, account_holder = ? WHERE id = ?',
-      [name, account_number, account_holder, id]
+      `UPDATE banks 
+         SET name           = ?,
+             account_number = ?,
+             account_holder = ?,
+             logo_base64    = ?
+       WHERE id = ?`,
+      [name, account_number, account_holder, logo_base64, id]
     );
-    return await this.getById(id);
+    return this.getById(id);
   },
 
   async delete(id) {
