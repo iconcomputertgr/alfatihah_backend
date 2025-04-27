@@ -14,6 +14,12 @@ const donationRoutes = require("./routes/donations");
 const userRoutes = require("./routes/users");
 const permissionsRoutes = require("./routes/permissions");
 const transactionsRoutes = require("./routes/transactions");
+const donationSummaryRouter = require('./routes/donationSummaries');
+const csPerformanceRouter = require('./routes/csPerformances');
+const programFundRouter = require('./routes/programFundAllocations');
+const dailyTransactionsRtaRouter      = require("./routes/dailyTransactionsRta");
+const fundingBankProgramRtaRouter     = require("./routes/fundingBankProgramRta");
+const budgetOverviewRtaRouter         = require("./routes/budgetOverviewRta");
 
 const app = express();
 
@@ -67,6 +73,16 @@ app.use("/api/users", userRoutes);
 app.use("/api/permissions", permissionsRoutes);
 
 app.use("/api/transactions", transactionsRoutes);
+
+app.use('/api/donationsummary', donationSummaryRouter);
+
+app.use('/api/cs-performance', csPerformanceRouter);
+
+app.use('/api/program-fund', programFundRouter);
+
+app.use("/api/daily-rta", dailyTransactionsRtaRouter);
+app.use("/api/funding-bank-program-rta", fundingBankProgramRtaRouter);
+app.use("/api/budget-overview-rta", budgetOverviewRtaRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
