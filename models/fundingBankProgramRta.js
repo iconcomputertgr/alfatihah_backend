@@ -1,6 +1,4 @@
-// File: backend/models/fundingBankProgramRta.js
-
-const db = require('../config/db');
+const db = require("../config/db");
 
 const FundingBankProgramRta = {
   /**
@@ -11,25 +9,25 @@ const FundingBankProgramRta = {
   async getByBankAndProgram({ startDate, endDate }) {
     const [rows] = await db.query(
       `SELECT
-         IFNULL(b.name, 'Unknown') AS bank,
-         p.name                   AS program,
-         IFNULL(SUM(t.amount),0)  AS total
-       FROM transaksis t
-       JOIN programs p
-         ON t.program_id = p.id
-       LEFT JOIN banks b
-         ON t.bank_id = b.id
-       WHERE DATE(t.transaction_date) BETWEEN ? AND ?
-       GROUP BY b.name, p.name
-       ORDER BY b.name, p.name`,
+        IFNULL(b.name, 'Unknown') AS bank,
+        p.name AS program,
+        IFNULL(SUM(t.amount),0) AS total
+      FROM transaksis t
+      JOIN programs p
+        ON t.program_id = p.id
+      LEFT JOIN banks b
+        ON t.bank_id = b.id
+      WHERE DATE(t.transaction_date) BETWEEN ? AND ?
+      GROUP BY b.name, p.name
+      ORDER BY b.name, p.name`,
       [startDate, endDate]
     );
-    return rows.map(r => ({
-      bank:    r.bank,
+    return rows.map((r) => ({
+      bank: r.bank,
       program: r.program,
-      total:   parseFloat(r.total)
+      total: parseFloat(r.total),
     }));
-  }
+  },
 };
 
 module.exports = FundingBankProgramRta;
