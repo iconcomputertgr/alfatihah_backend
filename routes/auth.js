@@ -151,8 +151,10 @@ router.post("/login", async (req, res) => {
     // For 2FA-enabled accounts:
     if (user.two_fa_enabled) {
       // First check if a trusted device token is present in cookies.
-      if (rememberDevice && req.cookies && req.cookies.device_token) {
-        const deviceToken = req.cookies.device_token;
+      if (rememberDevice && req.headers && req.headers.cookies) {
+        const deviceToken = req.headers.cookies
+          .split("device_token=")[1]
+          ?.split(";")[0];
         const isTrusted = await User.isTrustedDevice(
           user.id,
           deviceToken,
@@ -172,7 +174,21 @@ router.post("/login", async (req, res) => {
             maxAge: 2 * 60 * 60 * 1000,
           });
           await User.updateLoginSuccess(email, token);
-          return res.json({ message: "Login successful", token, deviceToken });
+
+          const permissions = await getUserPermissions(user.id);
+
+          return res.json({
+            message: "Login successful",
+            token,
+            deviceToken,
+            user: {
+              id: user.id,
+              name: user.name,
+              role: user.role,
+              photo: user.profile_picture || null,
+              permissions,
+            },
+          });
         }
       }
       // If not trusted, generate OTP as usual.
