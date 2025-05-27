@@ -53,7 +53,7 @@ router.post(
       is_active,
       approved,
       permissions = [],
-      theme = "light"
+      theme = "light",
     } = req.body;
     const file = req.file;
 
@@ -97,14 +97,12 @@ router.put(
       is_active,
       approved,
       permissions = [],
-      theme
+      theme,
     } = req.body;
     const file = req.file;
 
     try {
-      const filePath = file
-        ? `assets/images/users/${file.filename}`
-        : null;
+      const filePath = file ? `assets/images/users/${file.filename}` : null;
 
       const updatePayload = {
         name,
@@ -112,7 +110,7 @@ router.put(
         role,
         is_active,
         approved,
-        theme
+        theme,
       };
 
       if (filePath) updatePayload.profile_picture = filePath;
@@ -148,13 +146,7 @@ router.patch(
   uploadUserPhoto.single("profile_picture"),
   async (req, res) => {
     const { id } = req.params;
-    const {
-      name,
-      email,
-      theme,
-      password,
-      newPassword
-    } = req.body;
+    const { name, email, theme, password, newPassword } = req.body;
     const file = req.file;
 
     try {
@@ -183,7 +175,7 @@ router.patch(
         role: user.role,
         is_active: user.is_active,
         approved: user.approved,
-        profile_picture: filePath || user.profile_picture
+        profile_picture: filePath || user.profile_picture,
       });
 
       res.json({ success: true, message: "Profile updated" });

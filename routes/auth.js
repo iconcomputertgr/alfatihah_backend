@@ -141,6 +141,7 @@ router.post("/login", async (req, res) => {
         user: {
           id: user.id,
           name: user.name,
+          role: user.role,
           photo: user.profile_picture || null,
           permissions,
         },
@@ -260,6 +261,7 @@ router.post("/verify-2fa", async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
+        role: user.role,
         photo: user.profile_picture || null,
         permissions,
       },
