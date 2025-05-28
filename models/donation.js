@@ -5,42 +5,79 @@ const Donation = {
     const [results] = await db.query(`
       SELECT 
         donasis.id AS donation_id,
+        donasis.entry_number,
         donasis.amount,
         donasis.notes,
         donasis.donation_date,
+        donasis.received_date,
         donaturs.id AS donatur_id,
         donaturs.name AS donatur_name,
         donaturs.phone AS donatur_phone,
         programs.id AS program_id,
-        programs.name AS program_name
+        programs.name AS program_name,
+        users.id AS user_id,
+        users.name AS user_name
       FROM donasis
         JOIN donaturs ON donasis.donatur_id = donaturs.id
         JOIN programs ON donasis.program_id = programs.id
+        JOIN users ON donasis.user_id = users.id
       ORDER BY donasis.id DESC
     `);
 
-    return results.map((donation) => ({
-      id: donation.donation_id,
-      amount: donation.amount,
-      notes: donation.notes,
-      donation_date: donation.donation_date,
-      donatur: {
-        id: donation.donatur_id,
-        name: donation.donatur_name,
-        phone: donation.donatur_phone,
-      },
-      program: {
-        id: donation.program_id,
-        name: donation.program_name,
-      },
-    }));
+    return results;
   },
 
-  async create({ donatur_id, program_id, amount, donation_date, notes }) {
+  async getById(id) {
+    const [result] = await db.query(
+      `SELECT 
+        donasis.id AS donation_id,
+        donasis.entry_number,
+        donasis.amount,
+        donasis.notes,
+        donasis.donation_date,
+        donasis.received_date,
+        donaturs.id AS donatur_id,
+        donaturs.name AS donatur_name,
+        donaturs.phone AS donatur_phone,
+        donaturs.address AS donatur_address,
+        programs.id AS program_id,
+        programs.name AS program_name,
+        users.id AS user_id,
+        users.name AS user_name
+      FROM donasis
+      JOIN donaturs ON donasis.donatur_id = donaturs.id
+      JOIN programs ON donasis.program_id = programs.id
+      JOIN users ON donasis.user_id = users.id
+      WHERE donasis.id = ?`,
+      [id]
+    );
+
+    return result[0];
+  },
+
+  async create({
+    entry_number,
+    donatur,
+    program,
+    user,
+    amount,
+    donation_date,
+    received_date,
+    note,
+  }) {
     const [insertResult] = await db.query(
-      `INSERT INTO donasis (donatur_id, program_id, amount, donation_date, notes)
-       VALUES (?, ?, ?, ?, ?)`,
-      [donatur_id, program_id, amount, donation_date, notes]
+      `INSERT INTO donasis (entry_number, donatur_id, program_id, user_id, amount, donation_date, received_date, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        entry_number,
+        donatur.id,
+        program.id,
+        user.id,
+        amount,
+        donation_date,
+        received_date,
+        note,
+      ]
     );
 
     const newId = insertResult.insertId;
@@ -55,10 +92,13 @@ const Donation = {
           donaturs.name AS donatur_name,
           donaturs.phone AS donatur_phone,
           programs.id AS program_id,
-          programs.name AS program_name
+          programs.name AS program_name,
+          users.id AS user_id,
+          users.name AS user_name
         FROM donasis
         JOIN donaturs ON donasis.donatur_id = donaturs.id
         JOIN programs ON donasis.program_id = programs.id
+        JOIN users ON donasis.user_id = users.id
         WHERE donasis.id = ?`,
       [newId]
     );
@@ -68,6 +108,64 @@ const Donation = {
     }
 
     return rows[0];
+  },
+
+  async update({
+    id,
+    donatur,
+    program,
+    user,
+    amount,
+    donation_date,
+    received_date,
+    note,
+  }) {
+    const [result] = await db.query(
+      `UPDATE donasis SET donatur_id = ?, program_id = ?, user_id = ?, amount = ?, donation_date = ?, received_date = ?, notes = ? WHERE id = ?`,
+      [
+        donatur.id,
+        program.id,
+        user.id,
+        amount,
+        donation_date,
+        received_date,
+        note,
+        id,
+      ]
+    );
+
+    const [rows] = await db.query(
+      `SELECT 
+          donasis.id AS donation_id,
+          donasis.amount,
+          donasis.notes,
+          donasis.donation_date,
+          donaturs.id AS donatur_id,
+          donaturs.name AS donatur_name,
+          donaturs.phone AS donatur_phone,
+          programs.id AS program_id,
+          programs.name AS program_name,
+          users.id AS user_id,
+          users.name AS user_name
+        FROM donasis
+        JOIN donaturs ON donasis.donatur_id = donaturs.id
+        JOIN programs ON donasis.program_id = programs.id
+        JOIN users ON donasis.user_id = users.id
+        WHERE donasis.id = ?`,
+      [id]
+    );
+
+    if (!rows.length) {
+      throw new Error("Failed to load newly updated donation.");
+    }
+
+    return rows[0];
+  },
+
+  async delete(id) {
+    const [result] = await db.query("DELETE FROM donasis WHERE id = ?", [id]);
+
+    return result;
   },
 };
 

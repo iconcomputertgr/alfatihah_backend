@@ -8,7 +8,27 @@ router.get("/", async (req, res) => {
 
     res.json({
       success: true,
-      data: donations,
+      data: donations.map((donation) => ({
+        id: donation.donation_id,
+        entry_number: donation.entry_number,
+        amount: donation.amount,
+        notes: donation.notes,
+        donation_date: donation.donation_date,
+        received_date: donation.received_date,
+        donatur: {
+          id: donation.donatur_id,
+          name: donation.donatur_name,
+          phone: donation.donatur_phone,
+        },
+        program: {
+          id: donation.program_id,
+          name: donation.program_name,
+        },
+        user: {
+          id: donation.user_id,
+          name: donation.user_name,
+        },
+      })),
     });
   } catch (error) {
     console.error(error);
@@ -17,23 +37,79 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const donation = await Donation.getById(id);
+
+    if (!donation) return res.status(404).json({ error: "Donation not found" });
+
+    res.json({
+      success: true,
+      data: {
+        id: donation.donation_id,
+        entry_number: donation.entry_number,
+        amount: donation.amount,
+        notes: donation.notes,
+        donation_date: donation.donation_date,
+        received_date: donation.received_date,
+        donatur: {
+          id: donation.donatur_id,
+          name: donation.donatur_name,
+          phone: donation.donatur_phone,
+          address: donation.donatur_address,
+        },
+        program: {
+          id: donation.program_id,
+          name: donation.program_name,
+        },
+        user: {
+          id: donation.user_id,
+          name: donation.user_name,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to fetch donation" });
+  }
+});
+
 router.post("/", async (req, res) => {
-  const { donatur_id, program_id, amount, donation_date, notes } = req.body;
+  console.log(req.body);
+
+  const {
+    entry_number,
+    donatur,
+    program,
+    user,
+    amount,
+    donation_date,
+    received_date,
+    note,
+  } = req.body;
 
   try {
     const donation = await Donation.create({
-      donatur_id,
-      program_id,
+      entry_number,
+      donatur,
+      program,
+      user,
       amount,
       donation_date,
-      notes,
+      received_date,
+      note,
     });
 
     const created = {
       id: donation.donatur_id,
+      entry_number: donation.entry_number,
       amount: donation.amount,
       note: donation.notes,
       donation_date: donation.donation_date,
+      received_date: donation.received_date,
       donatur: {
         id: donation.donatur_id,
         name: donation.donatur_name,
@@ -42,6 +118,10 @@ router.post("/", async (req, res) => {
       program: {
         id: donation.program_id,
         name: donation.program_name,
+      },
+      user: {
+        id: donation.user_id,
+        name: donation.user_name,
       },
     };
 
@@ -53,6 +133,73 @@ router.post("/", async (req, res) => {
     console.error(error);
 
     res.status(500).json({ error: "Failed to create donation" });
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { donatur, program, user, amount, donation_date, received_date, note  } = req.body;
+
+  try {
+    const donation = await Donation.update(id, {
+      donatur,
+      program,
+      user,
+      amount,
+      donation_date,
+      received_date,
+      note,
+    });
+
+    if (!donation) return res.status(404).json({ error: "Donation not found" });
+
+    const updated = {
+      id: donation.donatur_id,
+      entry_number: donation.entry_number,
+      amount: donation.amount,
+      note: donation.notes,
+      donation_date: donation.donation_date,
+      received_date: donation.received_date,
+      donatur: {
+        id: donation.donatur_id,
+        name: donation.donatur_name,
+        phone: donation.donatur_phone,
+      },
+      program: {
+        id: donation.program_id,
+        name: donation.program_name,
+      },
+      user: {
+        id: donation.user_id,
+        name: donation.user_name,
+      },
+    };
+
+    res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to update donation" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const donation = await Donation.delete(id);
+
+    res.json({
+      success: true,
+      data: "Donation deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to delete donation" });
   }
 });
 
