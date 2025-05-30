@@ -37,7 +37,7 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { user, name, email, phone, address } = req.body;
+  const { user, name, email, phone, gender, address } = req.body;
 
   try {
     const donatur = await Donatur.create({
@@ -45,6 +45,7 @@ router.post("/", async (req, res) => {
       name,
       email,
       phone,
+      gender,
       address,
     });
 
@@ -61,7 +62,7 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { user, name, email, phone, address } = req.body;
+  const { user, name, email, phone, gender, address } = req.body;
 
   try {
     const donatur = await Donatur.update(id, {
@@ -69,6 +70,7 @@ router.put("/:id", async (req, res) => {
       name,
       email,
       phone,
+      gender,
       address,
     });
 

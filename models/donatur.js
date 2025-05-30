@@ -21,6 +21,7 @@ const Donatur = {
       name: donatur.name,
       email: donatur.email,
       phone: donatur.phone,
+      gender: donatur.gender,
       address: donatur.address,
     }));
   },
@@ -40,23 +41,24 @@ const Donatur = {
       name: result[0].name,
       email: result[0].email,
       phone: result[0].phone,
+      gender: result[0].gender,
       address: result[0].address,
     };
   },
 
-  async create({ user_id, name, email, phone, address }) {
+  async create({ user_id, name, email, phone, gender, address }) {
     const [result] = await db.query(
-      "INSERT INTO donaturs (user_id, name, email, phone, address) VALUES (?, ?, ?, ?, ?)",
-      [user_id, name, email, phone, address]
+      "INSERT INTO donaturs (user_id, name, email, phone, gender, address) VALUES (?, ?, ?, ?, ?, ?)",
+      [user_id, name, email, phone, gender, address]
     );
 
     return result;
   },
 
-  async update(id, { user_id, name, email, phone, address }) {
+  async update(id, { user_id, name, email, phone, gender, address }) {
     const [result] = await db.query(
-      "UPDATE donaturs SET user_id = ?, name = ?, email = ?, phone = ?, address = ? WHERE id = ?",
-      [user_id, name, email, phone, address, id]
+      "UPDATE donaturs SET user_id = ?, name = ?, email = ?, phone = ?, gender = ?, address = ? WHERE id = ?",
+      [user_id, name, email, phone, gender, address, id]
     );
 
     return result;
