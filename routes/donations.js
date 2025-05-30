@@ -139,10 +139,12 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { donatur, program, user, amount, donation_date, received_date, note  } = req.body;
+  const { donatur, program, user, amount, donation_date, received_date, note } =
+    req.body;
 
   try {
-    const donation = await Donation.update(id, {
+    const donation = await Donation.update({
+      id,
       donatur,
       program,
       user,

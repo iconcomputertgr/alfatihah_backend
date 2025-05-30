@@ -141,6 +141,7 @@ const Donation = {
           donasis.amount,
           donasis.notes,
           donasis.donation_date,
+          donasis.received_date,
           donaturs.id AS donatur_id,
           donaturs.name AS donatur_name,
           donaturs.phone AS donatur_phone,
