@@ -52,7 +52,25 @@ const Donatur = {
       [user_id, name, email, phone, gender, address]
     );
 
-    return result;
+    const id = result.insertId;
+
+    const [donatur] = await db.query(
+      "SELECT donaturs.*, users.id as user_id, users.name as user_name FROM donaturs JOIN users ON donaturs.user_id = users.id WHERE donaturs.id = ?",
+      [id]
+    );
+
+    return {
+      id: donatur[0].id,
+      user: {
+        id: donatur[0].user_id,
+        name: donatur[0].user_name,
+      },
+      name: donatur[0].name,
+      email: donatur[0].email,
+      phone: donatur[0].phone,
+      gender: donatur[0].gender,
+      address: donatur[0].address,
+    };
   },
 
   async update(id, { user_id, name, email, phone, gender, address }) {
