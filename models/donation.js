@@ -39,6 +39,7 @@ const Donation = {
         donaturs.id AS donatur_id,
         donaturs.name AS donatur_name,
         donaturs.phone AS donatur_phone,
+        donaturs.gender AS donatur_gender,
         donaturs.address AS donatur_address,
         programs.id AS program_id,
         programs.name AS program_name,

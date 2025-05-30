@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
         id: donation.donation_id,
         entry_number: donation.entry_number,
         amount: donation.amount,
-        notes: donation.notes,
+        note: donation.notes,
         donation_date: donation.donation_date,
         received_date: donation.received_date,
         donatur: {
@@ -51,13 +51,14 @@ router.get("/:id", async (req, res) => {
         id: donation.donation_id,
         entry_number: donation.entry_number,
         amount: donation.amount,
-        notes: donation.notes,
+        note: donation.notes,
         donation_date: donation.donation_date,
         received_date: donation.received_date,
         donatur: {
           id: donation.donatur_id,
           name: donation.donatur_name,
           phone: donation.donatur_phone,
+          gender: donation.donatur_gender,
           address: donation.donatur_address,
         },
         program: {
