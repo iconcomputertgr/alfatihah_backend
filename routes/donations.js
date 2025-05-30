@@ -79,8 +79,6 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  console.log(req.body);
-
   const {
     entry_number,
     donatur,
@@ -107,10 +105,6 @@ router.post("/", async (req, res) => {
     const created = {
       id: donation.donatur_id,
       entry_number: donation.entry_number,
-      amount: donation.amount,
-      note: donation.notes,
-      donation_date: donation.donation_date,
-      received_date: donation.received_date,
       donatur: {
         id: donation.donatur_id,
         name: donation.donatur_name,
@@ -124,6 +118,10 @@ router.post("/", async (req, res) => {
         id: donation.user_id,
         name: donation.user_name,
       },
+      amount: donation.amount,
+      donation_date: donation.donation_date,
+      received_date: donation.received_date,
+      note: donation.notes,
     };
 
     res.status(201).json({
@@ -159,10 +157,6 @@ router.put("/:id", async (req, res) => {
     const updated = {
       id: donation.donatur_id,
       entry_number: donation.entry_number,
-      amount: donation.amount,
-      note: donation.notes,
-      donation_date: donation.donation_date,
-      received_date: donation.received_date,
       donatur: {
         id: donation.donatur_id,
         name: donation.donatur_name,
@@ -176,6 +170,10 @@ router.put("/:id", async (req, res) => {
         id: donation.user_id,
         name: donation.user_name,
       },
+      amount: donation.amount,
+      donation_date: donation.donation_date,
+      received_date: donation.received_date,
+      note: donation.notes,
     };
 
     res.json({
