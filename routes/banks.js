@@ -1,109 +1,149 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Bank = require('../models/bank');
+const createUploadMiddleware = require("../middlewares/upload");
+const Bank = require("../models/bank");
 
-// GET all banks
-router.get('/', async (req, res) => {
+const uploadBankLogo = createUploadMiddleware(
+  "assets/images/banks",
+  (req, file) => {
+    const name = req.body.name || "bank";
+    return name.toLowerCase().replace(/\s+/g, "_");
+  }
+);
+
+router.get("/", async (req, res) => {
   try {
     const banks = await Bank.getAll();
-    const formatted = banks.map(b => ({
-      id:            b.id,
-      name:          b.name,
-      accountNumber: b.account_number,
-      branch:        b.account_holder,
-      logoBase64:    b.logo_base64,     // new field
-      createdAt:     b.created_at,
-      updatedAt:     b.updated_at,
-    }));
-    res.json(formatted);
-  } catch (err) {
-    console.error('Error fetching banks:', err);
-    res.status(500).json({ error: 'Failed to fetch banks' });
-  }
-});
 
-// GET a specific bank by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const b = await Bank.getById(req.params.id);
-    if (!b) {
-      return res.status(404).json({ error: 'Bank not found' });
-    }
     res.json({
-      id:            b.id,
-      name:          b.name,
-      accountNumber: b.account_number,
-      branch:        b.account_holder,
-      logoBase64:    b.logo_base64,
-      createdAt:     b.created_at,
-      updatedAt:     b.updated_at,
+      success: true,
+      data: banks.map((bank) => ({
+        id: bank.id,
+        name: bank.name,
+        account_number: bank.account_number,
+        account_holder: bank.account_holder,
+        logo: bank.logo,
+      })),
     });
-  } catch (err) {
-    console.error('Error fetching bank:', err);
-    res.status(500).json({ error: 'Failed to fetch bank' });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to fetch banks" });
   }
 });
 
-// POST create a new bank
-router.post('/', async (req, res) => {
-  const { name, account_number, account_holder, logoBase64 } = req.body;
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const newBank = await Bank.create({
+    const bank = await Bank.getById(id);
+
+    if (!bank) return res.status(404).json({ error: "Bank not found" });
+
+    res.json({
+      success: true,
+      data: {
+        id: bank.id,
+        name: bank.name,
+        account_number: bank.account_number,
+        account_holder: bank.account_holder,
+        logo: bank.logo,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to fetch bank" });
+  }
+});
+
+router.post("/", uploadBankLogo.single("logo"), async (req, res) => {
+  const { name, account_number, account_holder } = req.body;
+  const file = req.file;
+
+  try {
+    const filePath = file
+      ? `assets/images/banks/${file.filename}`
+      : "assets/images/default_bank.png";
+
+    const bank = await Bank.create({
       name,
       account_number,
       account_holder,
-      logo_base64: logoBase64
+      logo: filePath,
     });
+
+    const created = {
+      id: bank.id,
+      name: bank.name,
+      account_number: bank.account_number,
+      account_holder: bank.account_holder,
+      logo: bank.logo,
+    };
+
     res.status(201).json({
-      id:            newBank.id,
-      name:          newBank.name,
-      accountNumber: newBank.account_number,
-      branch:        newBank.account_holder,
-      logoBase64:    newBank.logo_base64,
+      success: true,
+      data: created,
     });
-  } catch (err) {
-    console.error('Error creating bank:', err);
-    res.status(500).json({ error: 'Failed to create bank' });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to create bank" });
   }
 });
 
-// PUT update an existing bank
-router.put('/:id', async (req, res) => {
-  const { name, account_number, account_holder, logoBase64 } = req.body;
+router.put("/:id", uploadBankLogo.single("logo"), async (req, res) => {
+  const { id } = req.params;
+  const { name, account_number, account_holder } = req.body;
+  const file = req.file;
+
   try {
-    const updated = await Bank.update(req.params.id, {
+    const filePath = file ? `assets/images/banks/${file.filename}` : null;
+
+    const updatePayload = {
       name,
       account_number,
       account_holder,
-      logo_base64: logoBase64
-    });
-    if (!updated) {
-      return res.status(404).json({ error: 'Bank not found' });
-    }
+    };
+
+    if (filePath) updatePayload.logo = filePath;
+
+    const bank = await Bank.update(id, updatePayload);
+
+    if (!bank) return res.status(404).json({ error: "Bank not found" });
+
+    const updated = {
+      id: bank.id,
+      name: bank.name,
+      account_number: bank.account_number,
+      account_holder: bank.account_holder,
+      logo: bank.logo,
+    };
+
     res.json({
-      id:            updated.id,
-      name:          updated.name,
-      accountNumber: updated.account_number,
-      branch:        updated.account_holder,
-      logoBase64:    updated.logo_base64,
+      success: true,
+      data: updated,
     });
-  } catch (err) {
-    console.error('Error updating bank:', err);
-    res.status(500).json({ error: 'Failed to update bank' });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to update bank" });
   }
 });
 
-// DELETE a bank
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const deleted = await Bank.delete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Bank not found' });
-    }
-    res.json({ message: 'Bank deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting bank:', err);
-    res.status(500).json({ error: 'Failed to delete bank' });
+    const deleted = await Bank.delete(id);
+
+    if (!deleted) return res.status(404).json({ error: "Bank not found" });
+
+    res.json({ success: true, message: "Bank deleted successfully" });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: "Failed to delete bank" });
   }
 });
 
