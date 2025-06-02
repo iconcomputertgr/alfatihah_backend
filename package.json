@@ -4,6 +4,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon sever.js",
+    "start": "pm2 start server.js --name alfatihah-backend --watch --ignore-watch node_modules && pm2 logs alfatihah-backend",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
