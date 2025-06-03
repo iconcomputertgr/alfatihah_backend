@@ -17,9 +17,9 @@ const BudgetOverviewRta = {
           2
         ) AS achievement
       FROM programs p
-      LEFT JOIN transaksis t
+      LEFT JOIN donasis t
         ON t.program_id = p.id
-        AND DATE(t.transaction_date) BETWEEN ? AND ?
+        AND DATE(t.donation_date) BETWEEN ? AND ?
       GROUP BY p.id, p.name, p.target_amount
       ORDER BY p.name`,
       [startDate, endDate]

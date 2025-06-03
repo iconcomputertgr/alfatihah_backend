@@ -15,18 +15,25 @@ router.get("/", async (req, res) => {
         note: donation.notes,
         donation_date: donation.donation_date,
         received_date: donation.received_date,
+        created_at: donation.created_at,
         donatur: {
           id: donation.donatur_id,
           name: donation.donatur_name,
           phone: donation.donatur_phone,
+          address: donation.donatur_address,
         },
         program: {
           id: donation.program_id,
           name: donation.program_name,
+          description: donation.program_description,
         },
         user: {
           id: donation.user_id,
           name: donation.user_name,
+        },
+        bank: {
+          id: donation.bank_id,
+          name: donation.bank_name,
         },
       })),
     });

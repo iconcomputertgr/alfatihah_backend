@@ -10,17 +10,24 @@ const Donation = {
         donasis.notes,
         donasis.donation_date,
         donasis.received_date,
+        donasis.created_at,
         donaturs.id AS donatur_id,
         donaturs.name AS donatur_name,
         donaturs.phone AS donatur_phone,
+        donaturs.gender AS donatur_gender,
+        donaturs.address AS donatur_address,
         programs.id AS program_id,
         programs.name AS program_name,
+        programs.description AS program_description,
         users.id AS user_id,
-        users.name AS user_name
+        users.name AS user_name,
+        banks.id AS bank_id,
+        banks.name AS bank_name
       FROM donasis
         JOIN donaturs ON donasis.donatur_id = donaturs.id
         JOIN programs ON donasis.program_id = programs.id
         JOIN users ON donasis.user_id = users.id
+        JOIN banks ON donasis.bank_id = banks.id
       ORDER BY donasis.id DESC
     `);
 
