@@ -51,7 +51,9 @@ const Donation = {
         programs.id AS program_id,
         programs.name AS program_name,
         users.id AS user_id,
-        users.name AS user_name
+        users.name AS user_name,
+        banks.id AS bank_id,
+        banks.name AS bank_name
       FROM donasis
       JOIN donaturs ON donasis.donatur_id = donaturs.id
       JOIN programs ON donasis.program_id = programs.id
@@ -68,19 +70,21 @@ const Donation = {
     donatur,
     program,
     user,
+    bank,
     amount,
     donation_date,
     received_date,
     note,
   }) {
     const [insertResult] = await db.query(
-      `INSERT INTO donasis (entry_number, donatur_id, program_id, user_id, amount, donation_date, received_date, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO donasis (entry_number, donatur_id, program_id, user_id, bank_id, amount, donation_date, received_date, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         entry_number,
         donatur.id,
         program.id,
         user.id,
+        bank.id,
         amount,
         donation_date,
         received_date,
@@ -103,7 +107,9 @@ const Donation = {
           programs.id AS program_id,
           programs.name AS program_name,
           users.id AS user_id,
-          users.name AS user_name
+          users.name AS user_name,
+          banks.id AS bank_id,
+          banks.name AS bank_name
         FROM donasis
         JOIN donaturs ON donasis.donatur_id = donaturs.id
         JOIN programs ON donasis.program_id = programs.id
@@ -124,17 +130,19 @@ const Donation = {
     donatur,
     program,
     user,
+    bank,
     amount,
     donation_date,
     received_date,
     note,
   }) {
     const [result] = await db.query(
-      `UPDATE donasis SET donatur_id = ?, program_id = ?, user_id = ?, amount = ?, donation_date = ?, received_date = ?, notes = ? WHERE id = ?`,
+      `UPDATE donasis SET donatur_id = ?, program_id = ?, user_id = ?, bank_id = ?, amount = ?, donation_date = ?, received_date = ?, notes = ? WHERE id = ?`,
       [
         donatur.id,
         program.id,
         user.id,
+        bank.id,
         amount,
         donation_date,
         received_date,
@@ -156,7 +164,9 @@ const Donation = {
           programs.id AS program_id,
           programs.name AS program_name,
           users.id AS user_id,
-          users.name AS user_name
+          users.name AS user_name,
+          banks.id AS bank_id,
+          banks.name AS bank_name
         FROM donasis
         JOIN donaturs ON donasis.donatur_id = donaturs.id
         JOIN programs ON donasis.program_id = programs.id

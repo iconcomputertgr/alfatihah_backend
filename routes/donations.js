@@ -76,6 +76,10 @@ router.get("/:id", async (req, res) => {
           id: donation.user_id,
           name: donation.user_name,
         },
+        bank: {
+          id: donation.bank_id,
+          name: donation.bank_name,
+        },
       },
     });
   } catch (error) {
@@ -91,6 +95,7 @@ router.post("/", async (req, res) => {
     donatur,
     program,
     user,
+    bank,
     amount,
     donation_date,
     received_date,
@@ -103,6 +108,7 @@ router.post("/", async (req, res) => {
       donatur,
       program,
       user,
+      bank,
       amount,
       donation_date,
       received_date,
@@ -125,6 +131,10 @@ router.post("/", async (req, res) => {
         id: donation.user_id,
         name: donation.user_name,
       },
+      bank: {
+        id: donation.bank_id,
+        name: donation.bank_name,
+      },
       amount: donation.amount,
       donation_date: donation.donation_date,
       received_date: donation.received_date,
@@ -144,7 +154,7 @@ router.post("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { donatur, program, user, amount, donation_date, received_date, note } =
+  const { donatur, program, user, bank, amount, donation_date, received_date, note } =
     req.body;
 
   try {
@@ -153,6 +163,7 @@ router.put("/:id", async (req, res) => {
       donatur,
       program,
       user,
+      bank,
       amount,
       donation_date,
       received_date,
@@ -176,6 +187,10 @@ router.put("/:id", async (req, res) => {
       user: {
         id: donation.user_id,
         name: donation.user_name,
+      },
+      bank: {
+        id: donation.bank_id,
+        name: donation.bank_name,
       },
       amount: donation.amount,
       donation_date: donation.donation_date,
