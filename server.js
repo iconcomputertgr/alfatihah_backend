@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
+const aiRouter = require("./routes/ai");
 const authRoutes = require("./routes/auth");
 const ocrRoutes = require("./routes/ocr");
 const programRoutes = require("./routes/programs");
@@ -86,6 +87,10 @@ app.use("/api/funding-bank-program-rta", fundingBankProgramRtaRouter);
 app.use("/api/budget-overview-rta", budgetOverviewRtaRouter);
 
 app.use('/api/dashboard', dashboard);
+
+
+// 2. Mount endpoint AI universal
+app.use("/api/ai", aiRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
