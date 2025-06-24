@@ -12,7 +12,7 @@ const User = {
     role = "user",
     is_active = 0,
     approved = 0,
-    profile_picture,
+    profile_picture = "assets/images/default_profile.png",
     theme = "light"
   ) {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -57,6 +57,7 @@ const User = {
         id,
         name,
         email,
+        password,
         role,
         is_active,
         approved,

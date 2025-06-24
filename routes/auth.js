@@ -41,7 +41,7 @@ router.post("/register", async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ error: "Email already registered" });
     }
-    await User.create(email, password, name);
+    await User.create(name, email, password);
     res
       .status(201)
       .json({ message: "Registration successful. Awaiting admin approval." });

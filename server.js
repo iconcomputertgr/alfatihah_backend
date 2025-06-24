@@ -21,7 +21,7 @@ const programFundRouter = require("./routes/programFundAllocations");
 const dailyTransactionsRtaRouter = require("./routes/dailyTransactionsRta");
 const fundingBankProgramRtaRouter = require("./routes/fundingBankProgramRta");
 const budgetOverviewRtaRouter = require("./routes/budgetOverviewRta");
-const dashboard = require('./routes/dashboard');
+const dashboard = require("./routes/dashboard");
 
 const app = express();
 
@@ -86,8 +86,7 @@ app.use("/api/daily-rta", dailyTransactionsRtaRouter);
 app.use("/api/funding-bank-program-rta", fundingBankProgramRtaRouter);
 app.use("/api/budget-overview-rta", budgetOverviewRtaRouter);
 
-app.use('/api/dashboard', dashboard);
-
+app.use("/api/dashboard", dashboard);
 
 // 2. Mount endpoint AI universal
 app.use("/api/ai", aiRouter);
