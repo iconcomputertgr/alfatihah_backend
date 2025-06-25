@@ -1,3 +1,4 @@
 /node_modules
 /assets/images/users/*
 /assets/images/banks/*
+/.env
